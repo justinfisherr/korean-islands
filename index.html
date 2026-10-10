@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Korean Islands</title>
+<style>
+  :root {
+    --bg: #0f1f2d;
+    --panel: #162838;
+    --panel-2: #1d3448;
+    --ink: #eaf2f7;
+    --muted: #8fa6b8;
+    --accent: #4fc3a1;
+    --line: #2a4356;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 700px at 70% -10%, #14304a 0%, var(--bg) 55%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 20px 60px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 26px;
+  }
+  h1 { font-size: 26px; margin: 0; letter-spacing: .3px; }
+  h1 .ko { color: var(--accent); font-weight: 600; }
+  .stats { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+  .stat { text-align: right; }
+  .stat .num { font-size: 22px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  .domain { margin-bottom: 34px; }
+  .domain-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .domain-title h2 { font-size: 17px; margin: 0; color: var(--muted); font-weight: 600; }
+  .domain-title .native { color: var(--accent); }
+  .islands { display: flex; flex-wrap: wrap; gap: 16px; }
+  .island {
+    border-radius: 22px;
+    padding: 18px 18px 16px;
+    cursor: pointer;
+    position: relative;
+    min-width: 150px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    transition: transform .12s ease, box-shadow .12s ease;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .island:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,.35); }
+  .island .plant {
+    font-size: 30px; line-height: 1;
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .island .name { font-size: 15px; font-weight: 700; }
+  .island .native { color: var(--muted); font-size: 13px; }
+  .island .meta { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--muted); }
+  .island .words-count { font-weight: 700; color: var(--ink); }
+  .healthbar { height: 6px; border-radius: 3px; background: #0c1822; overflow: hidden; }
+  .healthbar > i { display: block; height: 100%; border-radius: 3px; }
+
+  /* modal */
+  .backdrop {
+    position: fixed; inset: 0; background: rgba(4,10,16,.72); backdrop-filter: blur(2px);
+    display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 50;
+  }
+  .backdrop.open { display: flex; }
+  .modal {
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 18px;
+    max-width: 720px; width: 100%; max-height: 86vh; overflow: auto; padding: 22px;
+  }
+  .modal header { border: 0; margin: 0; padding: 0 0 14px; }
+  .modal header h2 { margin: 0; font-size: 20px; }
+  .modal .close { margin-left: auto; background: none; border: 0; color: var(--muted); font-size: 22px; cursor: pointer; }
+  .word {
+    padding: 12px 0; border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 14px;
+  }
+  .word:first-of-type { border-top: 0; }
+  .word .term { font-size: 19px; font-weight: 700; }
+  .word .term .base { font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .word .meaning { color: var(--accent); font-size: 14px; }
+  .word .example { color: var(--muted); font-size: 13px; font-style: italic; }
+  .word .ex-en { color: #7f96a9; font-size: 12.5px; }
+  .word .mnem { color: #d9b96a; font-size: 12.5px; margin-top: 3px; }
+  .word .badges { display: flex; gap: 6px; align-items: flex-start; flex-direction: column; }
+  .badge { font-size: 10.5px; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .4px; font-weight: 700; }
+  .badge.new { background: #2a4356; color: #9fc2d6; }
+  .badge.learning { background: #4d3a14; color: #ffd98a; }
+  .badge.review { background: #123f2e; color: #7ee0b2; }
+  .word .wbar { height: 4px; border-radius: 2px; background: #0c1822; margin-top: 4px; }
+  .word .wbar > i { display: block; height: 100%; border-radius: 2px; }
+  .footnote { color: var(--muted); font-size: 12px; margin-top: 26px; }
+  @media (max-width: 560px) {
+    .island { min-width: 130px; }
+    .stats { margin-left: 0; width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Korean <span class="ko">Islands</span></h1>
+    <div class="stats" id="stats"></div>
+  </header>
+  <div id="map"></div>
+  <div class="footnote" id="footnote"></div>
+</div>
+
+<div class="backdrop" id="backdrop">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+
+function plantFor(h) {
+  if (h < 0.25) return { e: '🌱', bg: '#3a2f1d' };
+  if (h < 0.5)  return { e: '🌿', bg: '#2e4a2a' };
+  if (h < 0.75) return { e: '🪴', bg: '#1f5238' };
+  return { e: '🌳', bg: '#175534' };
+}
+function pct(h) { return Math.round(h * 100); }
+function green(h) { return `hsl(${Math.round(150 * h + 35)}, ${Math.round(35 + 40 * h)}%, ${Math.round(28 + 14 * h)}%)`; }
+
+async function load() {
+  const res = await fetch('data.json');
+  const data = await res.json();
+  if (data.error) { $('#map').innerHTML = '<p style="color:#e88">Error: ' + data.error + '</p>'; return; }
+
+  $('#stats').innerHTML = `
+    <div class="stat"><div class="num">${data.total_words}</div><div class="lbl">words</div></div>
+    <div class="stat"><div class="num">${data.domains.length}</div><div class="lbl">domains</div></div>
+    <div class="stat"><div class="num">${pct(data.overall_health)}%</div><div class="lbl">health</div></div>
+  `;
+
+  const map = $('#map');
+  map.innerHTML = '';
+  for (const d of data.domains) {
+    const sec = document.createElement('section');
+    sec.className = 'domain';
+    sec.innerHTML = `<div class="domain-title"><h2>${d.name}</h2><span class="native">${d.name_native || ''}</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'islands';
+    for (const isl of d.islands) {
+      const p = plantFor(isl.health);
+      const el = document.createElement('div');
+      el.className = 'island';
+      el.style.width = `${Math.max(150, 150 + Math.sqrt(isl.size) * 26)}px`;
+      el.style.borderColor = green(isl.health);
+      el.innerHTML = `
+        <div class="plant" style="background:${p.bg}">${p.e}</div>
+        <div>
+          <div class="name">${isl.name}</div>
+          <div class="native">${isl.name_native || ''}</div>
+        </div>
+        <div class="meta">
+          <span class="words-count">${isl.size}</span><span>words</span>
+        </div>
+        <div class="healthbar"><i style="width:${pct(isl.health)}%;background:${green(isl.health)}"></i></div>
+      `;
+      el.addEventListener('click', () => openIsland(d, isl));
+      grid.appendChild(el);
+    }
+    sec.appendChild(grid);
+    map.appendChild(sec);
+  }
+  $('#footnote').textContent = `Updated live from Anki · ${new Date(data.generated_at).toLocaleString()}`;
+}
+
+function openIsland(domain, isl) {
+  const rows = isl.words.map((w) => {
+    const badge = `<span class="badge ${w.status}">${w.status}${w.status === 'review' && w.interval_days ? ' · ' + w.interval_days + 'd' : ''}</span>`;
+    const base = w.base_form ? `<span class="base">(${w.base_form})</span>` : '';
+    const mnem = w.mnemonic ? `<div class="mnem">💡 ${w.mnemonic}</div>` : '';
+    const sim = w.similar ? `<div class="ex-en">similar · ${w.similar}</div>` : '';
+    return `<div class="word">
+      <div>
+        <div class="term">${w.term}${base}</div>
+        <div class="meaning">${w.meaning || ''}</div>
+        ${w.example ? `<div class="example">${w.example}</div>` : ''}
+        ${w.example_en ? `<div class="ex-en">${w.example_en}</div>` : ''}
+        ${mnem}${sim}
+        <div class="wbar"><i style="width:${pct(w.health)}%;background:${green(w.health)}"></i></div>
+      </div>
+      <div class="badges">${badge}</div>
+    </div>`;
+  }).join('');
+
+  $('#modal').innerHTML = `
+    <header><div><h2>${isl.name} <span style="color:#4fc3a1">${isl.name_native || ''}</span></h2>
+      <div style="color:#8fa6b8;font-size:13px">${domain.name} · ${isl.size} words · ${pct(isl.health)}% health</div></div>
+      <button class="close" id="closeBtn">×</button></header>
+    ${rows}
+  `;
+  $('#backdrop').classList.add('open');
+  $('#closeBtn').onclick = () => $('#backdrop').classList.remove('open');
+}
+$('#backdrop').addEventListener('click', (e) => { if (e.target.id === 'backdrop') $('#backdrop').classList.remove('open'); });
+
+load();
+</script>
+</body>
+</html>
